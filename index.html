@@ -28,119 +28,25 @@
     </div>
   </nav>
 
-  <!-- ============================================================
-       FILME — hero + seção de scroll-scrubbing.
-       O wrapper .film tem 440vh de altura:
-         · 100vh  = hero estático (o vídeo ainda não avança)
-         · 240vh  = janela de scrubbing (progresso 0 → 1)
-         · 100vh  = altura do próprio .stage sticky (que "gruda"
-                    no topo e é liberado quando o wrapper termina)
-       O .stage fica sticky com os dois vídeos empilhados; o JS
-       calcula o progresso a partir da posição do wrapper e seta
-       currentTime dos dois vídeos em sincronia.
-       ============================================================ -->
-  <section class="film" id="inicio" data-film>
-
-    <div class="stage" data-stage>
-      <!-- Vídeo A (ângulo 1). No desktop serve só como "poster" inicial e
-           fonte para a extração de quadros; quem aparece é o canvas. -->
-      <video class="stage__video stage__video--a" data-video-a
+  <!-- Capa em vídeo: reprodução nativa, sem sincronização com o scroll. -->
+  <section class="film" id="inicio">
+    <div class="stage">
+      <video class="stage__video"
              src="assets/video-a.mp4"
-             muted playsinline preload="auto"
+             autoplay muted loop playsinline preload="auto"
              aria-hidden="true" tabindex="-1"></video>
-
-      <!-- Vídeo B (ângulo oposto, ~180°). Usado apenas como fonte de
-           quadros no desktop; nem é exibido no mobile. -->
-      <video class="stage__video stage__video--b" data-video-b
-             src="assets/video-b.mp4"
-             muted playsinline preload="metadata"
-             aria-hidden="true" tabindex="-1"></video>
-
-      <!-- Palco real do scrubbing (técnica das páginas da Apple):
-           os quadros dos dois vídeos são pré-extraídos para bitmaps e o
-           scroll apenas desenha o quadro certo aqui — resposta imediata,
-           sem seek de vídeo durante o scroll. -->
-      <canvas class="stage__canvas" data-canvas aria-hidden="true"></canvas>
-
-      <!-- Linha discreta de prontidão; desaparece ao concluir. -->
-      <div class="stage__loading" data-loading aria-hidden="true"></div>
-
-      <!-- Linha divisória do momento split-screen. -->
-      <div class="stage__seam" data-seam aria-hidden="true"></div>
-
-      <!-- Gradiente sutil p/ legibilidade dos textos sobre o vídeo. -->
       <div class="stage__shade" aria-hidden="true"></div>
-
-      <!-- Headlines editoriais ancoradas em janelas de progresso.
-           data-from / data-to = trecho do scrubbing (0 a 1) em que
-           a legenda fica visível; o JS faz o fade nas bordas. -->
-      <div class="caps">
-        <p class="cap cap--1" data-cap data-from="0.00" data-to="0.16">
-          <span class="cap__meta">Cota +0,00</span>
-          <span class="cap__text">Todo projeto começa com um terreno&nbsp;vazio.</span>
-        </p>
-        <p class="cap cap--2" data-cap data-from="0.28" data-to="0.48">
-          <span class="cap__meta">Cota +1,20</span>
-          <span class="cap__text">Fundações que sustentam décadas.</span>
-        </p>
-        <p class="cap cap--3" data-cap data-from="0.56" data-to="0.78">
-          <span class="cap__meta">Cota +4,60</span>
-          <span class="cap__text">Estrutura é intenção.</span>
-        </p>
-        <p class="cap cap--4" data-cap data-from="0.90" data-to="1.00">
-          <span class="cap__meta">Cota +7,50</span>
-          <span class="cap__text">Uma obra. Dois pontos de&nbsp;vista.</span>
-        </p>
-      </div>
     </div>
 
-    <!-- Hero: rola por cima do stage sticky (parallax natural). -->
     <header class="hero">
       <p class="hero__eyebrow">Estúdio de arquitetura · São Paulo</p>
       <h1 class="hero__title">Cota&nbsp;Zero</h1>
       <p class="hero__sub">Arquitetura que começa no chão.<br>Do vazio à estrutura.</p>
       <p class="hero__hint" aria-hidden="true">
         <span class="hero__hint-line"></span>
-        Role para acompanhar a obra
+        Role para conhecer o estúdio
       </p>
     </header>
-  </section>
-
-  <!-- ============================================================
-       RÉGUA DE COTAS — assinatura da página. Um gabarito de nível
-       fixo na lateral: o marcador sobe de +0,00 m a +7,50 m junto
-       com o progresso do scrubbing (só aparece durante o filme).
-       ============================================================ -->
-  <aside class="gauge" data-gauge aria-hidden="true">
-    <div class="gauge__track">
-      <span class="gauge__tick" style="--at: 0"><i></i>+7,50</span>
-      <span class="gauge__tick" style="--at: 1"><i></i>+5,00</span>
-      <span class="gauge__tick" style="--at: 2"><i></i>+2,50</span>
-      <span class="gauge__tick" style="--at: 3"><i></i>+0,00</span>
-      <span class="gauge__marker" data-gauge-marker>
-        <b data-gauge-cota>+0,00 m</b>
-      </span>
-    </div>
-  </aside>
-
-  <!-- ============================================================
-       CAPÍTULOS — versão estática das headlines do filme.
-       Só aparece nos modos "simple" (mobile) e "static"
-       (prefers-reduced-motion), quando não há scrubbing.
-       ============================================================ -->
-  <section class="chapters" aria-hidden="false">
-    <div class="chapter">
-      <p class="chapter__meta">Cota +0,00</p>
-      <h2 class="chapter__text">Todo projeto começa com um terreno vazio.</h2>
-    </div>
-    <div class="chapter">
-      <p class="chapter__meta">Cota +1,20</p>
-      <h2 class="chapter__text">Fundações que sustentam décadas.</h2>
-    </div>
-    <div class="chapter">
-      <p class="chapter__meta">Cota +4,60</p>
-      <h2 class="chapter__text">Estrutura é intenção.</h2>
-    </div>
   </section>
 
   <!-- ============================================================
@@ -266,6 +172,5 @@
     <p>© 2026 · São Paulo</p>
   </footer>
 
-  <script src="js/main.js"></script>
 </body>
 </html>

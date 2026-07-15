@@ -22,7 +22,6 @@
 
   /* --- layout --- */
   --gutter: clamp(1.25rem, 5vw, 5rem);
-  --scrub-height: 440vh; /* 100vh hero + 240vh scrubbing + 100vh do stage */
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -100,20 +99,19 @@ a { color: inherit; }
 .nav__links a:hover { opacity: 1; }
 
 /* ==========================================================================
-   FILME — hero + scrubbing
+   CAPA EM VÍDEO
    ========================================================================== */
 .film {
   position: relative;
-  height: var(--scrub-height);
-  background: var(--noite);
-}
-
-/* palco sticky: fica preso ao topo enquanto o wrapper .film rola */
-.stage {
-  position: sticky;
-  top: 0;
   height: 100vh;
   height: 100svh;
+  background: var(--noite);
+  overflow: hidden;
+}
+
+.stage {
+  position: absolute;
+  inset: 0;
   overflow: hidden;
 }
 
@@ -123,60 +121,7 @@ a { color: inherit; }
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-.stage__video--a { z-index: 1; }
-.stage__video--b { z-index: 1; opacity: 0; }
-
-/* canvas do scrubbing: só existe visualmente no modo desktop (scrub);
-   nos outros modos os próprios <video> fazem o papel */
-.stage__canvas {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  width: 100%;
-  height: 100%;
-  display: none;
-}
-.mode-scrub .stage__canvas { display: block; }
-/* no scrub os vídeos viram apenas fonte de quadros (ficam fora de cena
-   depois que o 1º quadro é extraído — o JS remove o poster) */
-.mode-scrub .stage__video--b { display: none; }
-
-.stage__loading {
-  position: absolute;
-  z-index: 7;
-  left: 50%;
-  bottom: 2.4vh;
-  width: clamp(5rem, 9vw, 8rem);
-  height: 1px;
-  transform: translateX(-50%);
-  background: rgba(242, 236, 225, 0.22);
-  transition: opacity 0.6s;
-  pointer-events: none;
-  display: none;
-  overflow: hidden;
-}
-.stage__loading::after {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: var(--load, 0%);
-  background: rgba(242, 236, 225, 0.82);
-  transition: width 0.2s ease-out;
-}
-.mode-scrub .stage__loading { display: block; }
-.stage__loading.is-done { opacity: 0; }
-
-/* linha divisória do split-screen */
-.stage__seam {
-  position: absolute;
-  z-index: 3;
-  left: 50%;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: rgba(242, 236, 225, 0.55);
-  opacity: 0;
+  z-index: 1;
 }
 
 /* gradiente sutil para legibilidade sem esconder a imagem */
@@ -193,43 +138,7 @@ a { color: inherit; }
   pointer-events: none;
 }
 
-/* --- headlines ancoradas ao progresso --- */
-.caps {
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  pointer-events: none;
-}
-.cap {
-  position: absolute;
-  max-width: 34ch;
-  color: var(--osso);
-  opacity: 0;               /* o JS anima opacity + translateY */
-  transform: translateY(18px);
-  will-change: opacity, transform;
-}
-.cap__meta {
-  display: block;
-  font-family: var(--f-mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  opacity: 0.7;
-  margin-bottom: 0.9rem;
-}
-.cap__text {
-  font-family: var(--f-display);
-  font-size: clamp(1.7rem, 4.2vw, 3.3rem);
-  line-height: 1.15;
-  text-wrap: balance;
-}
-/* posições editoriais alternadas */
-.cap--1 { left: var(--gutter); bottom: 16vh; }
-.cap--2 { left: var(--gutter); top: 22vh; }
-.cap--3 { right: var(--gutter); bottom: 18vh; text-align: right; }
-.cap--4 { left: 50%; top: 50%; transform: translate(-50%, -40%); text-align: center; }
-
-/* --- hero: rola por cima do palco sticky --- */
+/* conteúdo sobreposto à capa */
 .hero {
   position: absolute;
   inset: 0 0 auto 0;
@@ -292,126 +201,12 @@ a { color: inherit; }
   50%      { transform: scaleY(1); }
 }
 
-/* ==========================================================================
-   RÉGUA DE COTAS — assinatura. Gabarito de nível fixo na lateral;
-   o marcador sobe com o progresso do scrubbing (controlado pelo JS).
-   ========================================================================== */
-.gauge {
-  position: fixed;
-  z-index: 30;
-  right: calc(var(--gutter) * 0.5);
-  top: 50%;
-  transform: translateY(-50%);
-  height: 46vh;
-  opacity: 0;                /* o JS mostra só durante o filme */
-  transition: opacity 0.4s;
-  pointer-events: none;
-  color: var(--osso);
-}
-.gauge.is-visible { opacity: 1; }
-
-.gauge__track {
-  position: relative;
-  height: 100%;
-  width: 1px;
-  background: rgba(242, 236, 225, 0.4);
-}
-.gauge__tick {
-  position: absolute;
-  right: 0.6rem;
-  top: calc(var(--at) / 3 * 100%);
-  transform: translateY(-50%);
-  font-family: var(--f-mono);
-  font-size: 0.6rem;
-  letter-spacing: 0.08em;
-  opacity: 0.65;
-  white-space: nowrap;
-}
-.gauge__tick i {
-  display: inline-block;
-  width: 0.55rem;
-  height: 1px;
-  background: currentColor;
-  vertical-align: middle;
-  margin-left: 0.45rem;
-  position: absolute;
-  right: -0.6rem;
-  top: 50%;
-}
-.gauge__marker {
-  position: absolute;
-  right: 3.2rem;              /* afastado p/ não colidir com os ticks */
-  top: 100%;                  /* o JS move via top (0% = cota máxima) */
-  transform: translateY(-50%);
-  text-align: right;
-  white-space: nowrap;
-  will-change: top;
-}
-.gauge__marker::after {
-  content: "";
-  position: absolute;
-  right: -3.25rem;
-  top: 50%;
-  width: 3rem;
-  height: 2px;
-  background: var(--entardecer);
-}
-.gauge__marker b {
-  display: block;
-  font-family: var(--f-mono);
-  font-weight: 500;
-  font-size: 0.78rem;
-  color: var(--entardecer);
-}
-/* ==========================================================================
-   CAPÍTULOS — fallback estático das headlines (mobile / reduced-motion).
-   Escondido no modo scrubbing.
-   ========================================================================== */
-.chapters { display: none; }
-
-.mode-simple .chapters,
-.mode-static .chapters {
-  display: block;
-  background: var(--noite);
-  color: var(--osso);
-  padding: 18vh var(--gutter);
-}
-.chapter { max-width: 22ch; margin: 0 auto 16vh; }
-.chapter:last-child { margin-bottom: 0; }
-.chapter:nth-child(2) { margin-left: auto; margin-right: 0; text-align: right; }
-.chapter__meta {
-  font-family: var(--f-mono);
-  font-size: 0.66rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--entardecer);
-  margin-bottom: 0.9rem;
-}
-.chapter__text {
-  font-family: var(--f-display);
-  font-weight: 400;
-  font-size: clamp(1.8rem, 6.5vw, 3rem);
-  line-height: 1.15;
-}
-
-/* nos modos sem scrubbing o filme vira só um hero de 1 tela */
-.mode-simple .film,
-.mode-static .film { height: 100svh; }
-.mode-simple .stage,
-.mode-static .stage { position: relative; }
-.mode-simple .stage__video--b,
-.mode-static .stage__video--b,
-.mode-simple .caps,
-.mode-static .caps,
-.mode-simple .gauge,
-.mode-static .gauge { display: none; }
-
-/* ==========================================================================
+/* ========================================================================== 
    SOBRE
    ========================================================================== */
 .sobre {
   position: relative;
-  z-index: 10;               /* desliza por cima do stage ao final do filme */
+  z-index: 10;
   background: var(--areia);
   padding: clamp(6rem, 14vh, 10rem) var(--gutter);
 }
@@ -633,15 +428,12 @@ a { color: inherit; }
   .projetos__grid { grid-template-columns: 1fr; }
   .projeto, .projeto--wide { grid-column: auto; }
   .projeto--wide .projeto__thumb { aspect-ratio: 16 / 10; }
-  .cap--3 { right: var(--gutter); left: var(--gutter); }
 }
 
 /* ==========================================================================
-   MOVIMENTO REDUZIDO — sem scroll suave, sem animação do hint.
-   (o JS também troca para o modo "static": sem scrubbing/autoplay)
+   MOVIMENTO REDUZIDO — sem scroll suave nem animação do hint.
    ========================================================================== */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .hero__hint-line { animation: none; }
-  .cap { transition: none; }
 }
