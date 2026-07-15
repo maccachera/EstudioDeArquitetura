@@ -1,0 +1,647 @@
+/* ==========================================================================
+   COTA ZERO — Estúdio de Arquitetura
+   Paleta derivada dos vídeos: céu de entardecer (rosa/laranja + azul
+   acinzentado), terra e alvenaria bege. Tipografia: Marcellus (display,
+   capitulares lapidares) + Archivo (corpo) + Spline Sans Mono (cotas).
+   ========================================================================== */
+
+:root {
+  /* --- paleta --- */
+  --areia:      #E7DFD1;  /* alvenaria clara — fundo das seções */
+  --osso:       #F2ECE1;  /* variação mais clara p/ cartões */
+  --terra:      #7A5C44;  /* solo exposto */
+  --entardecer: #C97F5E;  /* rosa-laranja do céu */
+  --ceu:        #5C6B80;  /* azul-acinzentado do crepúsculo */
+  --noite:      #211C17;  /* quase-preto quente — filme e rodapé */
+  --tinta:      #2A241E;  /* texto sobre fundos claros */
+
+  /* --- tipografia --- */
+  --f-display: "Marcellus", "Times New Roman", serif;
+  --f-body:    "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-mono:    "Spline Sans Mono", "Consolas", monospace;
+
+  /* --- layout --- */
+  --gutter: clamp(1.25rem, 5vw, 5rem);
+  --scrub-height: 440vh; /* 100vh hero + 240vh scrubbing + 100vh do stage */
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--f-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--tinta);
+  background: var(--noite); /* evita flash claro atrás do vídeo */
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; }
+
+:focus-visible {
+  outline: 2px solid var(--entardecer);
+  outline-offset: 3px;
+}
+
+/* rótulo de seção (eyebrow) */
+.section-label {
+  font-family: var(--f-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--terra);
+  margin-bottom: clamp(2rem, 5vh, 3.5rem);
+}
+.section-label::before {
+  content: "";
+  display: inline-block;
+  width: 2.25rem;
+  height: 1px;
+  background: currentColor;
+  vertical-align: middle;
+  margin-right: 0.75rem;
+}
+.section-label--light { color: var(--areia); opacity: 0.75; }
+
+/* ==========================================================================
+   NAVEGAÇÃO — mix-blend-difference: branca sobre o vídeo escuro,
+   escura sobre as seções cor de areia.
+   ========================================================================== */
+.nav {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 40;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 1.4rem var(--gutter);
+  mix-blend-mode: difference;
+  color: #fff;
+}
+.nav a { text-decoration: none; }
+.nav__mark {
+  font-family: var(--f-display);
+  font-size: 1.05rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.nav__links {
+  display: flex;
+  gap: clamp(1rem, 3vw, 2.5rem);
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.nav__links a { opacity: 0.8; transition: opacity 0.2s; }
+.nav__links a:hover { opacity: 1; }
+
+/* ==========================================================================
+   FILME — hero + scrubbing
+   ========================================================================== */
+.film {
+  position: relative;
+  height: var(--scrub-height);
+  background: var(--noite);
+}
+
+/* palco sticky: fica preso ao topo enquanto o wrapper .film rola */
+.stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+}
+
+.stage__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.stage__video--a { z-index: 1; }
+.stage__video--b { z-index: 1; opacity: 0; }
+
+/* canvas do scrubbing: só existe visualmente no modo desktop (scrub);
+   nos outros modos os próprios <video> fazem o papel */
+.stage__canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  display: none;
+}
+.mode-scrub .stage__canvas { display: block; }
+/* no scrub os vídeos viram apenas fonte de quadros (ficam fora de cena
+   depois que o 1º quadro é extraído — o JS remove o poster) */
+.mode-scrub .stage__video--b { display: none; }
+
+.stage__loading {
+  position: absolute;
+  z-index: 7;
+  left: 50%;
+  bottom: 2.4vh;
+  width: clamp(5rem, 9vw, 8rem);
+  height: 1px;
+  transform: translateX(-50%);
+  background: rgba(242, 236, 225, 0.22);
+  transition: opacity 0.6s;
+  pointer-events: none;
+  display: none;
+  overflow: hidden;
+}
+.stage__loading::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--load, 0%);
+  background: rgba(242, 236, 225, 0.82);
+  transition: width 0.2s ease-out;
+}
+.mode-scrub .stage__loading { display: block; }
+.stage__loading.is-done { opacity: 0; }
+
+/* linha divisória do split-screen */
+.stage__seam {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(242, 236, 225, 0.55);
+  opacity: 0;
+}
+
+/* gradiente sutil para legibilidade sem esconder a imagem */
+.stage__shade {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  background:
+    linear-gradient(180deg,
+      rgba(33, 28, 23, 0.5) 0%,
+      rgba(33, 28, 23, 0.05) 30%,
+      rgba(33, 28, 23, 0.05) 62%,
+      rgba(33, 28, 23, 0.5) 100%);
+  pointer-events: none;
+}
+
+/* --- headlines ancoradas ao progresso --- */
+.caps {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+.cap {
+  position: absolute;
+  max-width: 34ch;
+  color: var(--osso);
+  opacity: 0;               /* o JS anima opacity + translateY */
+  transform: translateY(18px);
+  will-change: opacity, transform;
+}
+.cap__meta {
+  display: block;
+  font-family: var(--f-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.7;
+  margin-bottom: 0.9rem;
+}
+.cap__text {
+  font-family: var(--f-display);
+  font-size: clamp(1.7rem, 4.2vw, 3.3rem);
+  line-height: 1.15;
+  text-wrap: balance;
+}
+/* posições editoriais alternadas */
+.cap--1 { left: var(--gutter); bottom: 16vh; }
+.cap--2 { left: var(--gutter); top: 22vh; }
+.cap--3 { right: var(--gutter); bottom: 18vh; text-align: right; }
+.cap--4 { left: 50%; top: 50%; transform: translate(-50%, -40%); text-align: center; }
+
+/* --- hero: rola por cima do palco sticky --- */
+.hero {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 100vh;
+  height: 100svh;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0 var(--gutter) 9vh;
+  color: var(--osso);
+}
+.hero__eyebrow {
+  font-family: var(--f-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  opacity: 0.8;
+  margin-bottom: 1.2rem;
+}
+.hero__title {
+  font-family: var(--f-display);
+  font-weight: 400;
+  font-size: clamp(3.2rem, 11vw, 9rem);
+  line-height: 0.95;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.hero__sub {
+  margin-top: 1.6rem;
+  font-size: clamp(0.95rem, 1.4vw, 1.15rem);
+  line-height: 1.5;
+  opacity: 0.85;
+  max-width: 34ch;
+}
+.hero__hint {
+  position: absolute;
+  right: var(--gutter);
+  bottom: 9vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+  font-family: var(--f-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  opacity: 0.7;
+  writing-mode: vertical-rl;
+}
+.hero__hint-line {
+  width: 1px;
+  height: 3.4rem;
+  background: currentColor;
+  animation: hint-grow 2.2s ease-in-out infinite;
+  transform-origin: top;
+}
+@keyframes hint-grow {
+  0%, 100% { transform: scaleY(0.35); }
+  50%      { transform: scaleY(1); }
+}
+
+/* ==========================================================================
+   RÉGUA DE COTAS — assinatura. Gabarito de nível fixo na lateral;
+   o marcador sobe com o progresso do scrubbing (controlado pelo JS).
+   ========================================================================== */
+.gauge {
+  position: fixed;
+  z-index: 30;
+  right: calc(var(--gutter) * 0.5);
+  top: 50%;
+  transform: translateY(-50%);
+  height: 46vh;
+  opacity: 0;                /* o JS mostra só durante o filme */
+  transition: opacity 0.4s;
+  pointer-events: none;
+  color: var(--osso);
+}
+.gauge.is-visible { opacity: 1; }
+
+.gauge__track {
+  position: relative;
+  height: 100%;
+  width: 1px;
+  background: rgba(242, 236, 225, 0.4);
+}
+.gauge__tick {
+  position: absolute;
+  right: 0.6rem;
+  top: calc(var(--at) / 3 * 100%);
+  transform: translateY(-50%);
+  font-family: var(--f-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  opacity: 0.65;
+  white-space: nowrap;
+}
+.gauge__tick i {
+  display: inline-block;
+  width: 0.55rem;
+  height: 1px;
+  background: currentColor;
+  vertical-align: middle;
+  margin-left: 0.45rem;
+  position: absolute;
+  right: -0.6rem;
+  top: 50%;
+}
+.gauge__marker {
+  position: absolute;
+  right: 3.2rem;              /* afastado p/ não colidir com os ticks */
+  top: 100%;                  /* o JS move via top (0% = cota máxima) */
+  transform: translateY(-50%);
+  text-align: right;
+  white-space: nowrap;
+  will-change: top;
+}
+.gauge__marker::after {
+  content: "";
+  position: absolute;
+  right: -3.25rem;
+  top: 50%;
+  width: 3rem;
+  height: 2px;
+  background: var(--entardecer);
+}
+.gauge__marker b {
+  display: block;
+  font-family: var(--f-mono);
+  font-weight: 500;
+  font-size: 0.78rem;
+  color: var(--entardecer);
+}
+/* ==========================================================================
+   CAPÍTULOS — fallback estático das headlines (mobile / reduced-motion).
+   Escondido no modo scrubbing.
+   ========================================================================== */
+.chapters { display: none; }
+
+.mode-simple .chapters,
+.mode-static .chapters {
+  display: block;
+  background: var(--noite);
+  color: var(--osso);
+  padding: 18vh var(--gutter);
+}
+.chapter { max-width: 22ch; margin: 0 auto 16vh; }
+.chapter:last-child { margin-bottom: 0; }
+.chapter:nth-child(2) { margin-left: auto; margin-right: 0; text-align: right; }
+.chapter__meta {
+  font-family: var(--f-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--entardecer);
+  margin-bottom: 0.9rem;
+}
+.chapter__text {
+  font-family: var(--f-display);
+  font-weight: 400;
+  font-size: clamp(1.8rem, 6.5vw, 3rem);
+  line-height: 1.15;
+}
+
+/* nos modos sem scrubbing o filme vira só um hero de 1 tela */
+.mode-simple .film,
+.mode-static .film { height: 100svh; }
+.mode-simple .stage,
+.mode-static .stage { position: relative; }
+.mode-simple .stage__video--b,
+.mode-static .stage__video--b,
+.mode-simple .caps,
+.mode-static .caps,
+.mode-simple .gauge,
+.mode-static .gauge { display: none; }
+
+/* ==========================================================================
+   SOBRE
+   ========================================================================== */
+.sobre {
+  position: relative;
+  z-index: 10;               /* desliza por cima do stage ao final do filme */
+  background: var(--areia);
+  padding: clamp(6rem, 14vh, 10rem) var(--gutter);
+}
+.sobre__manifesto {
+  font-family: var(--f-display);
+  font-weight: 400;
+  font-size: clamp(1.7rem, 3.6vw, 3rem);
+  line-height: 1.3;
+  max-width: 28ch;
+}
+.sobre__manifesto em {
+  font-style: normal;
+  color: var(--entardecer);
+}
+.sobre__cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: clamp(1.5rem, 4vw, 4rem);
+  margin-top: clamp(3rem, 7vh, 5rem);
+  max-width: 62rem;
+  margin-left: auto;
+}
+.sobre__cols p {
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: color-mix(in srgb, var(--tinta) 82%, var(--areia));
+}
+
+/* ==========================================================================
+   PROJETOS — miniaturas em gradiente (paleta do entardecer) como
+   placeholder editorial até existirem fotos reais.
+   ========================================================================== */
+.projetos {
+  position: relative;
+  z-index: 10;
+  background: var(--areia);
+  padding: clamp(4rem, 10vh, 8rem) var(--gutter) clamp(6rem, 14vh, 10rem);
+}
+.projetos__grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: clamp(1.25rem, 3vw, 2.5rem) clamp(1.25rem, 2.5vw, 2rem);
+}
+.projeto { grid-column: span 2; }
+.projeto--wide { grid-column: span 4; }
+
+.projeto__thumb {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+}
+.projeto--wide .projeto__thumb { aspect-ratio: 21 / 10; }
+
+/* Os gradientes preservam a composição enquanto as fotos carregam. */
+.projeto__thumb--1 {
+  background: linear-gradient(180deg,
+    var(--ceu) 0%, #9D7E77 40%, var(--entardecer) 62%,
+    var(--terra) 62.4%, #4A3A2C 100%);
+}
+.projeto__thumb--2 {
+  background: linear-gradient(180deg,
+    #46536A 0%, var(--ceu) 45%, #B98A6F 70%,
+    #3F332A 70.4%, var(--noite) 100%);
+}
+.projeto__thumb--3 {
+  background: linear-gradient(180deg,
+    #D9A183 0%, var(--entardecer) 38%, #8A6B66 58%,
+    var(--terra) 58.4%, #33291F 100%);
+}
+.projeto__thumb--4 {
+  background: linear-gradient(180deg,
+    var(--ceu) 0%, #8F8280 52%, #D19672 76%,
+    #2E251D 76.4%, var(--noite) 100%);
+}
+
+.projeto__thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(0.88) contrast(1.03);
+  transition: transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1),
+              filter 0.5s ease;
+}
+.projeto__thumb::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(180deg,
+    transparent 52%,
+    rgba(33, 28, 23, 0.3) 100%);
+  pointer-events: none;
+}
+.projeto:hover .projeto__thumb img {
+  transform: scale(1.025);
+  filter: saturate(0.98) contrast(1.02);
+}
+
+.projeto__cota {
+  position: absolute;
+  z-index: 2;
+  right: 0.9rem;
+  bottom: 0.75rem;
+  font-family: var(--f-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(242, 236, 225, 0.85);
+}
+.projeto__nome {
+  font-family: var(--f-display);
+  font-weight: 400;
+  font-size: clamp(1.15rem, 1.8vw, 1.5rem);
+  margin-top: 1.1rem;
+}
+.projeto__meta {
+  font-family: var(--f-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--terra);
+  margin-top: 0.3rem;
+}
+
+/* ==========================================================================
+   PROCESSO — sequência real de trabalho (numeração carrega informação)
+   ========================================================================== */
+.processo {
+  position: relative;
+  z-index: 10;
+  background: var(--noite);
+  color: var(--osso);
+  padding: clamp(6rem, 14vh, 10rem) var(--gutter);
+}
+.processo__lista {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: clamp(2.5rem, 5vw, 4rem) clamp(1.5rem, 3vw, 3rem);
+}
+.passo__num {
+  font-family: var(--f-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  color: var(--entardecer);
+}
+.passo__titulo {
+  font-family: var(--f-display);
+  font-weight: 400;
+  font-size: 1.45rem;
+  margin: 0.9rem 0 0.7rem;
+}
+.passo__texto {
+  font-size: 0.88rem;
+  line-height: 1.7;
+  opacity: 0.72;
+}
+
+/* ==========================================================================
+   CONTATO + FOOTER
+   ========================================================================== */
+.contato {
+  position: relative;
+  z-index: 10;
+  background:
+    linear-gradient(180deg, var(--noite) 0%, #37302B 55%, #59473C 100%);
+  color: var(--osso);
+  padding: clamp(6rem, 16vh, 11rem) var(--gutter) clamp(5rem, 12vh, 8rem);
+}
+.contato__email {
+  display: inline-block;
+  font-family: var(--f-display);
+  font-size: clamp(1.6rem, 4.6vw, 3.6rem);
+  line-height: 1.1;
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--osso) 40%, transparent);
+  padding-bottom: 0.35rem;
+  transition: border-color 0.25s, color 0.25s;
+  overflow-wrap: anywhere;
+}
+.contato__email:hover {
+  color: var(--entardecer);
+  border-color: var(--entardecer);
+}
+.contato__info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(2rem, 6vw, 6rem);
+  margin-top: clamp(3rem, 7vh, 5rem);
+  font-size: 0.88rem;
+  line-height: 1.8;
+  opacity: 0.78;
+}
+
+.footer {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem 2rem;
+  background: #59473C;
+  color: rgba(242, 236, 225, 0.72);
+  font-family: var(--f-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 1.4rem var(--gutter);
+}
+
+/* ==========================================================================
+   RESPONSIVO
+   ========================================================================== */
+@media (max-width: 820px) {
+  .nav__links { gap: 1rem; font-size: 0.68rem; }
+  .hero { padding-bottom: 12vh; }
+  .hero__hint { display: none; }
+  .projetos__grid { grid-template-columns: 1fr; }
+  .projeto, .projeto--wide { grid-column: auto; }
+  .projeto--wide .projeto__thumb { aspect-ratio: 16 / 10; }
+  .cap--3 { right: var(--gutter); left: var(--gutter); }
+}
+
+/* ==========================================================================
+   MOVIMENTO REDUZIDO — sem scroll suave, sem animação do hint.
+   (o JS também troca para o modo "static": sem scrubbing/autoplay)
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .hero__hint-line { animation: none; }
+  .cap { transition: none; }
+}

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cota Zero — Estúdio de Arquitetura</title>
+  <meta name="description" content="Cota Zero é um estúdio de arquitetura em São Paulo. Todo projeto começa no chão: do terreno vazio à estrutura.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Archivo:wght@400;500&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- ============================================================
+       NAVEGAÇÃO — fixa, em mix-blend-difference para ficar legível
+       tanto sobre o vídeo (escuro) quanto sobre as seções claras.
+       ============================================================ -->
+  <nav class="nav" aria-label="Navegação principal">
+    <a class="nav__mark" href="#inicio">Cota Zero</a>
+    <div class="nav__links">
+      <a href="#sobre">Sobre</a>
+      <a href="#projetos">Projetos</a>
+      <a href="#processo">Processo</a>
+      <a href="#contato">Contato</a>
+    </div>
+  </nav>
+
+  <!-- ============================================================
+       FILME — hero + seção de scroll-scrubbing.
+       O wrapper .film tem 440vh de altura:
+         · 100vh  = hero estático (o vídeo ainda não avança)
+         · 240vh  = janela de scrubbing (progresso 0 → 1)
+         · 100vh  = altura do próprio .stage sticky (que "gruda"
+                    no topo e é liberado quando o wrapper termina)
+       O .stage fica sticky com os dois vídeos empilhados; o JS
+       calcula o progresso a partir da posição do wrapper e seta
+       currentTime dos dois vídeos em sincronia.
+       ============================================================ -->
+  <section class="film" id="inicio" data-film>
+
+    <div class="stage" data-stage>
+      <!-- Vídeo A (ângulo 1). No desktop serve só como "poster" inicial e
+           fonte para a extração de quadros; quem aparece é o canvas. -->
+      <video class="stage__video stage__video--a" data-video-a
+             src="assets/video-a.mp4"
+             muted playsinline preload="auto"
+             aria-hidden="true" tabindex="-1"></video>
+
+      <!-- Vídeo B (ângulo oposto, ~180°). Usado apenas como fonte de
+           quadros no desktop; nem é exibido no mobile. -->
+      <video class="stage__video stage__video--b" data-video-b
+             src="assets/video-b.mp4"
+             muted playsinline preload="metadata"
+             aria-hidden="true" tabindex="-1"></video>
+
+      <!-- Palco real do scrubbing (técnica das páginas da Apple):
+           os quadros dos dois vídeos são pré-extraídos para bitmaps e o
+           scroll apenas desenha o quadro certo aqui — resposta imediata,
+           sem seek de vídeo durante o scroll. -->
+      <canvas class="stage__canvas" data-canvas aria-hidden="true"></canvas>
+
+      <!-- Linha discreta de prontidão; desaparece ao concluir. -->
+      <div class="stage__loading" data-loading aria-hidden="true"></div>
+
+      <!-- Linha divisória do momento split-screen. -->
+      <div class="stage__seam" data-seam aria-hidden="true"></div>
+
+      <!-- Gradiente sutil p/ legibilidade dos textos sobre o vídeo. -->
+      <div class="stage__shade" aria-hidden="true"></div>
+
+      <!-- Headlines editoriais ancoradas em janelas de progresso.
+           data-from / data-to = trecho do scrubbing (0 a 1) em que
+           a legenda fica visível; o JS faz o fade nas bordas. -->
+      <div class="caps">
+        <p class="cap cap--1" data-cap data-from="0.00" data-to="0.16">
+          <span class="cap__meta">Cota +0,00</span>
+          <span class="cap__text">Todo projeto começa com um terreno&nbsp;vazio.</span>
+        </p>
+        <p class="cap cap--2" data-cap data-from="0.28" data-to="0.48">
+          <span class="cap__meta">Cota +1,20</span>
+          <span class="cap__text">Fundações que sustentam décadas.</span>
+        </p>
+        <p class="cap cap--3" data-cap data-from="0.56" data-to="0.78">
+          <span class="cap__meta">Cota +4,60</span>
+          <span class="cap__text">Estrutura é intenção.</span>
+        </p>
+        <p class="cap cap--4" data-cap data-from="0.90" data-to="1.00">
+          <span class="cap__meta">Cota +7,50</span>
+          <span class="cap__text">Uma obra. Dois pontos de&nbsp;vista.</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Hero: rola por cima do stage sticky (parallax natural). -->
+    <header class="hero">
+      <p class="hero__eyebrow">Estúdio de arquitetura · São Paulo</p>
+      <h1 class="hero__title">Cota&nbsp;Zero</h1>
+      <p class="hero__sub">Arquitetura que começa no chão.<br>Do vazio à estrutura.</p>
+      <p class="hero__hint" aria-hidden="true">
+        <span class="hero__hint-line"></span>
+        Role para acompanhar a obra
+      </p>
+    </header>
+  </section>
+
+  <!-- ============================================================
+       RÉGUA DE COTAS — assinatura da página. Um gabarito de nível
+       fixo na lateral: o marcador sobe de +0,00 m a +7,50 m junto
+       com o progresso do scrubbing (só aparece durante o filme).
+       ============================================================ -->
+  <aside class="gauge" data-gauge aria-hidden="true">
+    <div class="gauge__track">
+      <span class="gauge__tick" style="--at: 0"><i></i>+7,50</span>
+      <span class="gauge__tick" style="--at: 1"><i></i>+5,00</span>
+      <span class="gauge__tick" style="--at: 2"><i></i>+2,50</span>
+      <span class="gauge__tick" style="--at: 3"><i></i>+0,00</span>
+      <span class="gauge__marker" data-gauge-marker>
+        <b data-gauge-cota>+0,00 m</b>
+      </span>
+    </div>
+  </aside>
+
+  <!-- ============================================================
+       CAPÍTULOS — versão estática das headlines do filme.
+       Só aparece nos modos "simple" (mobile) e "static"
+       (prefers-reduced-motion), quando não há scrubbing.
+       ============================================================ -->
+  <section class="chapters" aria-hidden="false">
+    <div class="chapter">
+      <p class="chapter__meta">Cota +0,00</p>
+      <h2 class="chapter__text">Todo projeto começa com um terreno vazio.</h2>
+    </div>
+    <div class="chapter">
+      <p class="chapter__meta">Cota +1,20</p>
+      <h2 class="chapter__text">Fundações que sustentam décadas.</h2>
+    </div>
+    <div class="chapter">
+      <p class="chapter__meta">Cota +4,60</p>
+      <h2 class="chapter__text">Estrutura é intenção.</h2>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SOBRE — manifesto do estúdio.
+       ============================================================ -->
+  <section class="sobre" id="sobre">
+    <p class="section-label">Sobre o estúdio</p>
+    <h2 class="sobre__manifesto">
+      Arquitetura não começa no desenho — começa no chão. Cada projeto
+      parte da <em>cota zero</em>: o nível do terreno, a luz do fim de
+      tarde, o peso da pedra. Construímos devagar, com quem constrói.
+    </h2>
+    <div class="sobre__cols">
+      <p>
+        Fundado em 2012 por três arquitetos formados entre São Paulo e
+        Porto, o estúdio trabalha em escala doméstica e cultural —
+        casas, ateliês, pavilhões — sempre com presença semanal no
+        canteiro. Acreditamos que o detalhe se decide na obra, não no
+        escritório.
+      </p>
+      <p>
+        Nossa prática privilegia materiais de massa aparente: pedra,
+        concreto pigmentado, madeira de reflorestamento. Menos
+        revestimento, mais matéria. O tempo é tratado como material de
+        projeto — tudo o que desenhamos é pensado para envelhecer bem.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       PROJETOS — grid editorial. Miniaturas em gradiente (paleta do
+       entardecer dos vídeos) como placeholder até haver fotos reais.
+       ============================================================ -->
+  <section class="projetos" id="projetos">
+    <p class="section-label">Projetos selecionados</p>
+    <div class="projetos__grid">
+      <article class="projeto projeto--wide">
+        <div class="projeto__thumb projeto__thumb--1">
+          <img src="assets/projects/casa-bare.jpg"
+               alt="Casa térrea em concreto e taipa sob a luz do entardecer"
+               width="1672" height="941" loading="lazy" decoding="async">
+          <span class="projeto__cota">Cota +6,40 m</span>
+        </div>
+        <h3 class="projeto__nome">Casa Baré</h3>
+        <p class="projeto__meta">Itu, SP · Residencial · 2024</p>
+      </article>
+      <article class="projeto">
+        <div class="projeto__thumb projeto__thumb--2">
+          <img src="assets/projects/pavilhao-mirante.jpg"
+               alt="Pavilhão de pedra aberto para a paisagem montanhosa ao amanhecer"
+               width="1672" height="941" loading="lazy" decoding="async">
+          <span class="projeto__cota">Cota +4,10 m</span>
+        </div>
+        <h3 class="projeto__nome">Pavilhão Mirante</h3>
+        <p class="projeto__meta">Serra da Canastra, MG · Cultural · 2023</p>
+      </article>
+      <article class="projeto">
+        <div class="projeto__thumb projeto__thumb--3">
+          <img src="assets/projects/atelie-ipe.jpg"
+               alt="Ateliê urbano em concreto e tijolos junto a um ipê amarelo"
+               width="1672" height="941" loading="lazy" decoding="async">
+          <span class="projeto__cota">Cota +7,80 m</span>
+        </div>
+        <h3 class="projeto__nome">Ateliê do Ipê</h3>
+        <p class="projeto__meta">São Paulo, SP · Trabalho · 2022</p>
+      </article>
+      <article class="projeto projeto--wide">
+        <div class="projeto__thumb projeto__thumb--4">
+          <img src="assets/projects/casa-duas-aguas.jpg"
+               alt="Casa de dois telhados em madeira cercada pela Mata Atlântica"
+               width="1672" height="941" loading="lazy" decoding="async">
+          <span class="projeto__cota">Cota +5,25 m</span>
+        </div>
+        <h3 class="projeto__nome">Casa Duas Águas</h3>
+        <p class="projeto__meta">Ubatuba, SP · Residencial · 2021</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       PROCESSO — sequência real de trabalho (por isso numerada).
+       ============================================================ -->
+  <section class="processo" id="processo">
+    <p class="section-label section-label--light">Processo</p>
+    <ol class="processo__lista">
+      <li class="passo">
+        <span class="passo__num">01</span>
+        <h3 class="passo__titulo">Escuta</h3>
+        <p class="passo__texto">Programa, orçamento e tempo de vida da casa. Antes de desenhar, entender como se mora.</p>
+      </li>
+      <li class="passo">
+        <span class="passo__num">02</span>
+        <h3 class="passo__titulo">Cota zero</h3>
+        <p class="passo__texto">Leitura do terreno: topografia, sol, ventos, vizinhança. O nível de referência de tudo o que vem depois.</p>
+      </li>
+      <li class="passo">
+        <span class="passo__num">03</span>
+        <h3 class="passo__titulo">Projeto</h3>
+        <p class="passo__texto">Do estudo preliminar ao executivo, com maquetes físicas em todas as etapas de decisão.</p>
+      </li>
+      <li class="passo">
+        <span class="passo__num">04</span>
+        <h3 class="passo__titulo">Obra</h3>
+        <p class="passo__texto">Acompanhamento semanal no canteiro até a entrega — e uma visita um ano depois, para ver como envelheceu.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ============================================================
+       CONTATO
+       ============================================================ -->
+  <section class="contato" id="contato">
+    <p class="section-label section-label--light">Contato</p>
+    <a class="contato__email" href="mailto:contato@cotazero.arq.br">contato@cotazero.arq.br</a>
+    <div class="contato__info">
+      <p>Rua dos Pinheiros, 1234 — sala 42<br>Pinheiros, São Paulo — SP</p>
+      <p>+55 11 3456-7890<br>Visitas ao ateliê com hora marcada.</p>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <p>Cota Zero — Estúdio de Arquitetura</p>
+    <p>© 2026 · São Paulo</p>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
